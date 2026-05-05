@@ -1,17 +1,8 @@
-# Secret keys - never upload these
 .env
-
-# Excel leads file
 tripzy_leads.xlsx
-
-# Python junk files
 __pycache__/
 *.pyc
 *.pyo
-
-# Virtual environment (if you have one)
 venv/
 env/
-
-# VS Code settings
 .vscode/
