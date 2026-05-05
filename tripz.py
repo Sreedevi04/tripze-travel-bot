@@ -18,8 +18,6 @@ groq_client = Groq(api_key=os.getenv("GROQ_API_KEY"))
 sessions = {}
 
 
-# ── Excel ──────────────────────────────────────────────────
-
 def init_excel():
     if not os.path.exists(EXCEL_FILE):
         wb = Workbook()
@@ -64,8 +62,6 @@ def save_lead(session, telegram_id):
     except Exception as e:
         print(f"❌ Excel error: {e}")
 
-
-# ── Itinerary Builder ──────────────────────────────────────
 
 def build_itinerary(session):
     country     = session.get("country", "India")
@@ -120,9 +116,6 @@ Use real place names. Be specific with costs. Use emojis."""
     )
     return response.choices[0].message.content
 
-
-# ── Send long text in chunks ───────────────────────────────
-
 async def send_long(update: Update, text: str, chunk_size=4000):
     paragraphs = text.split("\n\n")
     current = ""
@@ -137,13 +130,10 @@ async def send_long(update: Update, text: str, chunk_size=4000):
         await update.message.reply_text(current.strip())
 
 
-# ── Reply helper (plain text, no parse mode) ───────────────
 
 async def reply(update: Update, text: str):
     await update.message.reply_text(text)
 
-
-# ── Stage Handler ──────────────────────────────────────────
 
 async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -157,13 +147,12 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
 
     print(f"\n📱 [{user_id}] Stage={stage} | Msg={msg}")
 
-    # Allow restart anytime
     if msg.lower() in ["hi", "hello", "start", "/start", "restart", "new trip", "hey"]:
         sessions[user_id] = {"stage": "greeting"}
         session = sessions[user_id]
         stage = "greeting"
 
-    # ── GREETING ──
+   
     if stage == "greeting":
         session["stage"] = "ask_country"
         await reply(update,
@@ -177,7 +166,7 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "(This helps me show costs in your local currency!)"
         )
 
-    # ── COUNTRY ──
+    
     elif stage == "ask_country":
         session["country"] = msg
         session["stage"] = "ask_destination"
@@ -189,7 +178,6 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"(Enter a country, city or region — e.g. Maldives, Bali, Paris)"
         )
 
-    # ── DESTINATION ──
     elif stage == "ask_destination":
         session["destination"] = msg
         session["stage"] = "ask_days"
@@ -201,7 +189,6 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"(Include arrival + departure days. E.g. type 7 for a 7-day trip)"
         )
 
-    # ── DAYS ──
     elif stage == "ask_days":
         session["days"] = msg
         session["stage"] = "ask_travelers"
@@ -213,7 +200,6 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"(Just type a number. E.g. 2)"
         )
 
-    # ── TRAVELERS ──
     elif stage == "ask_travelers":
         session["travelers"] = msg
         session["stage"] = "ask_budget"
@@ -225,7 +211,7 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"(Include your currency. E.g. Rs.5,00,000 or EUR 3,000 or $5,000)"
         )
 
-    # ── BUDGET ──
+    
     elif stage == "ask_budget":
         session["budget"] = msg
         session["stage"] = "ask_style"
@@ -241,7 +227,6 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"5 - Mix of Everything"
         )
 
-    # ── STYLE ──
     elif stage == "ask_style":
         styles = {
             "1": "Adventure & Thrills",
@@ -285,7 +270,6 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "😔 Something went wrong. Please select your travel style again (1-5):"
             )
 
-    # ── CONFIRM ──
     elif stage == "confirm":
         if any(w in msg.lower() for w in ["yes", "perfect", "great", "good", "happy", "ok", "love", "sure", "proceed", "fine"]):
             session["stage"] = "ask_name"
@@ -297,7 +281,6 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
                 "🗺️ What destination would you like? (You can change or keep the same)"
             )
 
-    # ── NAME ──
     elif stage == "ask_name":
         session["name"] = msg
         session["stage"] = "ask_email"
@@ -307,7 +290,6 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"(We'll send your full itinerary here)"
         )
 
-    # ── EMAIL ──
     elif stage == "ask_email":
         session["email"] = msg
         session["stage"] = "ask_phone"
@@ -317,7 +299,6 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
             "(Our travel expert will call you within 24 hours)"
         )
 
-    # ── PHONE ──
     elif stage == "ask_phone":
         session["phone_contact"] = msg
         session["stage"] = "done"
@@ -332,7 +313,7 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
             f"Want a new trip? Say Hi to start over."
         )
 
-    # ── DONE ──
+ 
     elif stage == "done":
         await reply(update,
             "✈️ Your booking is already in progress!\n"
@@ -347,7 +328,6 @@ async def process_stage(update: Update, context: ContextTypes.DEFAULT_TYPE):
         )
 
 
-# ── /start command ─────────────────────────────────────────
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     user_id = update.effective_user.id
@@ -355,7 +335,6 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await process_stage(update, context)
 
 
-# ── Main ───────────────────────────────────────────────────
 
 if __name__ == "__main__":
     init_excel()
